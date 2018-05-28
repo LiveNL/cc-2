@@ -86,8 +86,75 @@ data Code | CBExpr   BExpr
           | CStat    Stat'
           | CProc    Proc'
           | CProgram Program'
+data Procs
+  | Cons          proc :: Proc procs :: Procs
+  | Nil
+deriving Procs : Show
 
-type Procs = [Proc]
-type Procs' = [Proc']
+data Procs'
+  | Cons'         proc :: Proc' procs :: Procs'
+  | Nil'
+deriving Procs' : Show
+
 type Exprs = [Expr]
 
+
+attr Program
+  chn label       :: Int
+  syn program     :: Program'
+
+attr Procs
+  chn label       :: Int
+  syn procs       :: Procs'
+
+attr Proc
+  chn label       :: Int
+  syn proc        :: Proc'
+
+attr Stat
+  chn label       :: Int
+  syn stat        :: Stat'
+
+sem Program
+  | Program       lhs.program = Program' @procs.procs @stat.stat
+
+sem Procs
+  | Cons          lhs.procs   = Cons' @proc.proc @procs.procs
+  | Nil           lhs.procs   = Nil'
+
+
+sem Proc
+  | Proc          lhs.proc    = Proc' @lhs.label (@lhs.label + 1) @name @inp @out @stat.stat
+                  stat.label  = @lhs.label + 2
+                  lhs.label   = @stat.label
+
+sem Stat
+  | Skip          lhs.stat    = Skip' @lhs.label
+                  lhs.label   = @lhs.label + 1
+  | IfThenElse    lhs.stat    = IfThenElse' @lhs.label @cond @stat1.stat @stat2.stat
+                  stat1.label = @lhs.label + 1
+                  stat2.label = @stat1.label
+                  lhs.label   = @stat2.label
+  | While         lhs.stat    = While' @lhs.label @cond @stat.stat
+                  stat.label  = @lhs.label + 1
+                  lhs.label   = @stat.label
+  | Call          lhs.stat    = Call' @lhs.label (@lhs.label + 1) @name @params @out
+                  lhs.label   = @lhs.label + 2
+  | IAssign       lhs.stat    = IAssign' @lhs.label @name @val
+                  lhs.label   = @lhs.label + 1
+  | BAssign       lhs.stat    = BAssign' @lhs.label @name @val
+                  lhs.label   = @lhs.label + 1
+  | Seq           lhs.stat    = Seq' @stat1.stat @stat2.stat
+                  stat1.label = @lhs.label
+                  stat2.label = @stat1.label
+                  lhs.label   = @stat2.label
+  | Malloc        lhs.stat    = Malloc' @lhs.label @name @size
+                  lhs.label   = @lhs.label + 1
+  | Free          lhs.stat    = Free' @lhs.label @ptr
+                  lhs.label   = @lhs.label + 1
+  | RefAssign     lhs.stat    = RefAssign' @lhs.label @ptr @val
+                  lhs.label   = @lhs.label + 1
+  | Continue      lhs.stat    = Continue' @lhs.label
+                  lhs.label   = @lhs.label + 1
+  | Break         lhs.stat    = Break' @lhs.label
+                  lhs.label   = @lhs.label + 1
