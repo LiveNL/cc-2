@@ -148,8 +148,79 @@ freeVarsB (Not x) = freeVarsB x
 
 tranferFunctionExit :: Program' -> Int -> [String]
 tranferFunctionExit p@(Program' _ s) i | i `elem` (final s) = []
-                                        | otherwise = concat (map (\(l1, l2) -> (transferFunctionEntry p l1)) (reversedFlow s))
-
+                                       | otherwise = concat (map (\(l1, l2) -> (transferFunctionEntry p l1)) (reversedFlow s))
 transferFunctionEntry :: Program' -> Int -> [String]
 transferFunctionEntry p@(Program' _ s) i = ((tranferFunctionExit p i) L.\\ (concat (map kill (programToStat p)))) ++  (concat (map gen (programToStat p)))
 
+allVars :: Stat' -> [String]
+allVars (Skip' _) = []
+allVars (IAssign' _ _ val) = freeVarsI val
+allVars (BAssign' _ _ val) = freeVarsB val
+allVars _ = []
+
+ 
+getLabel (Skip' i) = [i]
+getLabel (IAssign' i _ _ ) = [i]
+getLabel (BAssign' i _ _ ) = [i]
+getLabel (IfThenElse' i _ s1 s2) = [i] ++ getLabel s1 ++ getLabel s2
+getLabel (While' i _ s) = [i] ++ (getLabel s)
+getLabel (Seq' s1 s2) = (getLabel s1)  ++ (getLabel (s2))
+
+-- mfp 
+-- needed:
+-- list of all statement "programToStat" - complete latice
+-- ??? monotone function space? tranferfunctionExit? and tranferfunctionEntry
+-- edges "flow of program" - trasition of the program  
+-- "int "  - extremal label 
+-- empty list - extremal value
+-- map from list of labels to ttransfer functions
+
+-- mfp ::    [Stat'] -- nodes - complete latice
+   --    -> [Int] -- final program - extremal labels 
+     --  -> [] -- extremal value
+       -- -> [(Int, Int)] -- flow/edges - transitions
+       -- -> Int -- ??? outcome
+
+mfp p@(Program' _ s) = 
+            let lattice       = allVars s -- moet nog 
+                transitions    = reversedFlow s
+                extremalLabel = final s
+                extremalValue = []
+                bottemList    = map (\x -> (x,[])) ((getLabel s) L.\\ extremalLabel)
+                extremalList  = map (\x -> (x,[])) extremalLabel
+                a             = bottemList ++ extremalList
+            in  mfpIteration  transitions a s
+
+getStat l s =  getStat' l (statToStatList s) 
+
+
+getStat' l ((Skip' i): xs) | l == i = Skip' i
+                           | otherwise = getStat' l xs
+getStat' l ((IAssign' i a b): xs) | l == i = IAssign' i a b
+                                  | otherwise = getStat' l xs 
+getStat' l ((BAssign' i a b): xs) | l == i = BAssign' i a b
+                                  | otherwise = getStat' l xs
+getStat' l ((IfThenElse' i c s1 s2): xs) | l == i = IfThenElse' i c s1 s2
+                                         | otherwise = getStat' l xs
+getStat' l ((While' i c s): xs) | l == i = While' i c s
+                                | otherwise = getStat' l xs
+getStat' l ((Seq' s1 s2): xs)  = getStat' l xs
+getStat' _ _ = Skip' 0
+
+
+mfpIteration [] a s     = a
+mfpIteration w@((l1,l2) : xs) a s = let a1 = map (\(x1,x2) -> if x1== l1 then x2 else error "komt die niet")  a  -- allVars (getStat l1 s) 
+                                        a2 = map (\(x1,x2) -> if x1== l2 then (x1,x2) else error "komt die niet")  a
+                                        x1  = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
+                                        superset = getSuperset a2 x1
+                                        newA2 = if not superset then (l1, snd a2 ++ x1) else a2
+                                        removeA2 = L.deleteBy (\z (x, y) -> z == x) l2 a 
+                                        newA = a ++ newA2
+                                    in  mfpIteration xs newA s 
+                                      
+                                      
+                                      
+-- getSuperset :: [String] -> [String] -> Bool                                
+getSuperset _ [] = True
+getSuperset x (a : as) | a `elem` (map snd x) = getSuperset x as 
+                       | otherwise = False
