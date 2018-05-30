@@ -34,21 +34,22 @@ runAnalysis' analyze programName = do
 
 -- parse program
 
-parse :: String -> IO [Stat']
+--parse :: String -> IO [Stat']
+parse :: String -> IO [(Int, [String])]
 parse programName = do
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
   let (freshLabel, t) = sem_Program (happy . alex $ content) 1
   let f = getFlow t
   --let (startLabel, finishLabel) = (freshLabel, freshLabel + 1)
-  return (programToStat t)
+  return (mfp t)
 
 getFlow (Program' p s) = flow s
 
 
 
 
---toStatPrime (Skip) i = Skip' i 
+--toStatPrime (Skip) i = Skip' i
 --toStatPrime (IAssign a b) i = IAssign' i a b
 --toStatPrime (BAssign a b) i = BAssign' i a b
 --toStatPrime (IfThenElse c s1 s2) i = IfThenElse' i c (toStatPrime s1 (i+1)) (toStatPrime s2 (i+1))
@@ -64,7 +65,7 @@ getFlow (Program' p s) = flow s
 
 
 -- write in AG
-initStat:: Stat' -> Int 
+initStat:: Stat' -> Int
 initStat (Skip' i) = i
 initStat (IAssign' i _ _) = i
 initStat (BAssign' i _ _) = i
@@ -72,7 +73,7 @@ initStat (IfThenElse' i _ _ _) = i
 initStat (While' i _ _) = i
 initStat (Seq' s1 _) = initStat (s1)
 
-final:: Stat' -> [Int] 
+final:: Stat' -> [Int]
 final (Skip' i) = [i]
 final (IAssign' i _ _ ) = [i]
 final (BAssign' i _ _ ) = [i]
@@ -97,7 +98,7 @@ reversedFlow s = map (\(x,y)-> (y,x)) (flow s)
 programToStat :: Program' -> [Stat']
 programToStat (Program' _ s) =  statToStatList s
 
-statToStatList (Skip' i)= [Skip' i] 
+statToStatList (Skip' i)= [Skip' i]
 statToStatList (IAssign' i a b) = [IAssign' i a b]
 statToStatList (BAssign' i a b) = [BAssign' i a b]
 statToStatList (IfThenElse' i c s1 s2)= [IfThenElse' i c s1 s2] ++ (statToStatList s1 ) ++ (statToStatList s2)
@@ -144,7 +145,7 @@ freeVarsB (And x y) = L.nub ((freeVarsB x) ++ (freeVarsB y))
 freeVarsB (Or x y) = L.nub ((freeVarsB x) ++ (freeVarsB y))
 freeVarsB (Not x) = freeVarsB x
 
--- tranfer functions live variable 
+-- tranfer functions live variable
 
 tranferFunctionExit :: Program' -> Int -> [String]
 tranferFunctionExit p@(Program' _ s) i | i `elem` (final s) = []
@@ -158,7 +159,7 @@ allVars (IAssign' _ _ val) = freeVarsI val
 allVars (BAssign' _ _ val) = freeVarsB val
 allVars _ = []
 
- 
+
 getLabel (Skip' i) = [i]
 getLabel (IAssign' i _ _ ) = [i]
 getLabel (BAssign' i _ _ ) = [i]
@@ -166,23 +167,23 @@ getLabel (IfThenElse' i _ s1 s2) = [i] ++ getLabel s1 ++ getLabel s2
 getLabel (While' i _ s) = [i] ++ (getLabel s)
 getLabel (Seq' s1 s2) = (getLabel s1)  ++ (getLabel (s2))
 
--- mfp 
+-- mfp
 -- needed:
 -- list of all statement "programToStat" - complete latice
 -- ??? monotone function space? tranferfunctionExit? and tranferfunctionEntry
--- edges "flow of program" - trasition of the program  
--- "int "  - extremal label 
+-- edges "flow of program" - trasition of the program
+-- "int "  - extremal label
 -- empty list - extremal value
 -- map from list of labels to ttransfer functions
 
 -- mfp ::    [Stat'] -- nodes - complete latice
-   --    -> [Int] -- final program - extremal labels 
+   --    -> [Int] -- final program - extremal labels
      --  -> [] -- extremal value
        -- -> [(Int, Int)] -- flow/edges - transitions
        -- -> Int -- ??? outcome
 
-mfp p@(Program' _ s) = 
-            let lattice       = allVars s -- moet nog 
+mfp p@(Program' _ s) =
+            let lattice       = allVars s -- moet nog
                 transitions    = reversedFlow s
                 extremalLabel = final s
                 extremalValue = []
@@ -191,13 +192,13 @@ mfp p@(Program' _ s) =
                 a             = bottemList ++ extremalList
             in  mfpIteration  transitions a s
 
-getStat l s =  getStat' l (statToStatList s) 
+getStat l s =  getStat' l (statToStatList s)
 
 
 getStat' l ((Skip' i): xs) | l == i = Skip' i
                            | otherwise = getStat' l xs
 getStat' l ((IAssign' i a b): xs) | l == i = IAssign' i a b
-                                  | otherwise = getStat' l xs 
+                                  | otherwise = getStat' l xs
 getStat' l ((BAssign' i a b): xs) | l == i = BAssign' i a b
                                   | otherwise = getStat' l xs
 getStat' l ((IfThenElse' i c s1 s2): xs) | l == i = IfThenElse' i c s1 s2
@@ -208,19 +209,20 @@ getStat' l ((Seq' s1 s2): xs)  = getStat' l xs
 getStat' _ _ = Skip' 0
 
 
+mfpIteration :: [(Int, Int)] -> [(Int, [String])] -> Stat' -> [(Int, [String])]
 mfpIteration [] a s     = a
-mfpIteration w@((l1,l2) : xs) a s = let a1 = map (\(x1,x2) -> if x1== l1 then x2 else error "komt die niet")  a  -- allVars (getStat l1 s) 
-                                        a2 = map (\(x1,x2) -> if x1== l2 then (x1,x2) else error "komt die niet")  a
+mfpIteration w@((l1,l2) : xs) a s = let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else [])  a  -- allVars (getStat l1 s)
+                                        a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else [])  a
                                         x1  = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
                                         superset = getSuperset a2 x1
-                                        newA2 = if not superset then (l1, snd a2 ++ x1) else a2
-                                        removeA2 = L.deleteBy (\z (x, y) -> z == x) l2 a 
-                                        newA = a ++ newA2
-                                    in  mfpIteration xs newA s 
-                                      
-                                      
-                                      
--- getSuperset :: [String] -> [String] -> Bool                                
+                                        newA2 = if not superset then (l1, a2 ++ x1) else (l2, a2)
+                                        removeA2 = filter (\(x, y) -> l2 /= x) a
+                                        newA = a ++ [newA2]
+                                    in  mfpIteration xs newA s
+
+
+
+getSuperset :: [String] -> [String] -> Bool
 getSuperset _ [] = True
-getSuperset x (a : as) | a `elem` (map snd x) = getSuperset x as 
+getSuperset x (a : as) | a `elem` x = getSuperset x as
                        | otherwise = False
