@@ -147,11 +147,14 @@ freeVarsB (Not x) = freeVarsB x
 
 -- tranfer functions live variable
 
-tranferFunctionExit :: Program' -> Int -> [String]
-tranferFunctionExit p@(Program' _ s) i | i `elem` (final s) = []
-                                       | otherwise = concat (map (\(l1, l2) -> (transferFunctionEntry p l1)) (reversedFlow s))
+transferFunctionExit :: Program' -> Int -> [String]
+transferFunctionExit p@(Program' _ s) i | i `elem` (final s) = []
+--                                        | otherwise = concatMap (\(l1, l2) -> (transferFunctionEntry p l1)) (reversedFlow s)
+                                        | otherwise = concatMap (\(ll1, ll2) -> transferFunctionEntry p ll1) (filter (\(l1, l2) -> l2 == i) (reversedFlow s))
+
 transferFunctionEntry :: Program' -> Int -> [String]
-transferFunctionEntry p@(Program' _ s) i = ((tranferFunctionExit p i) L.\\ (concat (map kill (programToStat p)))) ++  (concat (map gen (programToStat p)))
+transferFunctionEntry p@(Program' _ s) i = ((transferFunctionExit p i) L.\\ kill block) ++ gen block
+    where block = getStat' i (programToStat p)
 
 allVars :: Stat' -> [String]
 allVars (Skip' _) = []
@@ -190,7 +193,7 @@ mfp p@(Program' _ s) =
                 bottemList    = map (\x -> (x,[])) ((getLabel s) L.\\ extremalLabel)
                 extremalList  = map (\x -> (x,[])) extremalLabel
                 a             = bottemList ++ extremalList
-            in  mfpIteration  transitions a s
+             in  mfpIteration  transitions a s p
 
 getStat l s =  getStat' l (statToStatList s)
 
@@ -209,16 +212,16 @@ getStat' l ((Seq' s1 s2): xs)  = getStat' l xs
 getStat' _ _ = Skip' 0
 
 
-mfpIteration :: [(Int, Int)] -> [(Int, [String])] -> Stat' -> [(Int, [String])]
-mfpIteration [] a s     = a
-mfpIteration w@((l1,l2) : xs) a s = let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else [])  a  -- allVars (getStat l1 s)
-                                        a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else [])  a
-                                        x1  = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
-                                        superset = getSuperset a2 x1
-                                        newA2 = if not superset then (l1, a2 ++ x1) else (l2, a2)
-                                        removeA2 = filter (\(x, y) -> l2 /= x) a
-                                        newA = a ++ [newA2]
-                                    in  mfpIteration xs newA s
+mfpIteration :: [(Int, Int)] -> [(Int, [String])] -> Stat' -> Program' -> [(Int, [String])]
+mfpIteration [] a s p    = a
+mfpIteration w@((l1,l2) : xs) a s p = let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else [])  a  -- allVars (getStat l1 s)
+                                          a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else [])  a
+                                          x1  = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
+                                          superset = getSuperset a2 x1
+                                          newA2 = if not superset then (l1, a2 ++ x1) else (l2, a2)
+                                          removeA2 = filter (\(x, y) -> l2 /= x) a
+                                          newA = a ++ [newA2]
+                                      in  mfpIteration xs newA s p
 
 
 
