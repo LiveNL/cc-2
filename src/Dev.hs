@@ -18,8 +18,8 @@ ghci> run slv "fib"
 
 --}
 
-slv = undefined
-cp  = undefined
+--slv = undefined
+--cp  = undefined
 
 run :: (Eq a, Show a) => (Program' -> Analysis a) -> String -> IO ()
 run = runAnalysis'
@@ -40,7 +40,7 @@ parse programName = do
   content <- readFile fileName
   let (freshLabel, t) = sem_Program (happy . alex $ content) 1
   let f = getFlow t
-  return (mfp t)
+  return (slv t)
 
 getFlow (Program' p s) = flow s
 
@@ -91,22 +91,33 @@ allVars (IAssign' _ _ val) = freeVarsI val
 allVars (BAssign' _ _ val) = freeVarsB val
 allVars _                  = []
 
-getLabel (Skip' i)               = [i]
-getLabel (IAssign' i _ _ )       = [i]
-getLabel (BAssign' i _ _ )       = [i]
-getLabel (IfThenElse' i _ s1 s2) = [i] ++ getLabel s1 ++ getLabel s2
-getLabel (While' i _ s)          = [i] ++ (getLabel s)
-getLabel (Seq' s1 s2)            = (getLabel s1) ++ (getLabel s2)
+getLabel (Skip' i)               = i
+getLabel (IAssign' i _ _ )       = i
+getLabel (BAssign' i _ _ )       = i
+getLabel (IfThenElse' i _ s1 s2) = i
+getLabel (While' i _ s)          = i
+getLabel (Seq' s1 _)             = getLabel s1
 
-mfp p@(Program' _ s) =
-            let lattice       = allVars s -- moet nog
-                transitions   = reversedFlow s
-                extremalLabel = final s
-                extremalValue = []
-                bottemList    = map (\x -> (x,[])) ((getLabel s) L.\\ extremalLabel)
-                extremalList  = map (\x -> (x,[])) extremalLabel
-                a             = bottemList ++ extremalList
-             in  mfpIteration  transitions a s p
+getLabels (Skip' i)               = [i]
+getLabels (IAssign' i _ _ )       = [i]
+getLabels (BAssign' i _ _ )       = [i]
+getLabels (IfThenElse' i _ s1 s2) = [i] ++ getLabels s1 ++ getLabels s2
+getLabels (While' i _ s)          = [i] ++ (getLabels s)
+getLabels (Seq' s1 s2)            = (getLabels s1) ++ (getLabels s2)
+
+
+--            let lattice       = allVars s -- moet nog
+
+--cp p@(Program' _ s) flow =
+----            let lattice       = allVars s -- moet nog
+--            let transitions   = flow s
+--                extremalLabel = [initStat s]
+--                extremalValue = map (\x -> (x, [0])) (map getLabel (allVars2 s))
+----                bottomList    = map (\x -> (x, [])) ((getLabel s) L.\\ extremalLabel) -- A init p96
+----                extremalList  = map (\x -> (x, extremalValue)) extremalLabel
+--                a             = extremalValue -- bottomList ++ extremalList
+--             in mfpIteration transitions a s p  -- S = W from book/slides
+--
 
 getStat l s =  getStat' l (statToStatList s)
 
@@ -121,20 +132,82 @@ getStat' l ((IfThenElse' i c s1 s2): xs) | l == i = IfThenElse' i c s1 s2
                                          | otherwise = getStat' l xs
 getStat' l ((While' i c s): xs)          | l == i = While' i c s
                                          | otherwise = getStat' l xs
-getStat' l ((Seq' s1 s2): xs)  = getStat' l xs
+getStat' l ((Seq' s1 s2): xs) = getStat' l xs
 getStat' _ _ = Skip' 0
 
+--mfpIteration :: [(Int, Int)] -> [(Int, [String])] -> Stat' -> Program' -> [(Int, [String])]
+--mfpIteration [] a s p    = a
+--mfpIteration ((l1,l2) : xs) a s p = let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else []) a  -- allVars (getStat l1 s)
+--                                        a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else []) a
+--                                        x1 = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
+--                                        superset = getSuperset a2 x1
+--                                        newA2 = if not superset then (l1, a2 ++ x1) else (l2, a2)
+--                                        removeA2 = filter (\(x, y) -> l2 /= x) a
+--                                        newA = a ++ [newA2]
+--                                    in  mfpIteration xs newA s p
+--
+slv p@(Program' _ s) =
+            let transitions   = reversedFlow s
+                extremalLabels = final s
+                extremalValue = []
+                bottomList    = map (\x -> (x, [])) ((getLabels s) L.\\ extremalLabels)
+                extremalList  = map (\x -> (x, [])) extremalLabels
+                a             = bottomList ++ extremalList
+             in mfp (statToStatList s) transitions extremalLabels extremalValue slvTransferFunction [] True True s -- cleanup s/slist
 
-mfpIteration :: [(Int, Int)] -> [(Int, [String])] -> Stat' -> Program' -> [(Int, [String])]
-mfpIteration [] a s p    = a
-mfpIteration ((l1,l2) : xs) a s p = let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else [])  a  -- allVars (getStat l1 s)
-                                        a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else [])  a
-                                        x1  = (a1 L.\\ kill (getStat l1 s)) ++ gen (getStat l1 s)
-                                        superset = getSuperset a2 x1
-                                        newA2 = if not superset then (l1, a2 ++ x1) else (l2, a2)
-                                        removeA2 = filter (\(x, y) -> l2 /= x) a
-                                        newA = a ++ [newA2]
-                                    in  mfpIteration xs newA s p
+slvTransferFunction a1 label stms = (a1 L.\\ kill (getStat label stms)) ++ gen (getStat label stms)
+
+mfp stms transitions extremalLabels extremalValue transferFunctions bottom setType ion s = let a = mfpInit s extremalLabels extremalValue bottom
+                                                                                               w = transitions
+                                                                                           in mfpIteration a w transferFunctions s setType ion
+
+mfpInit statements extremalLabels extremalValue bottom = setA statements
+  where setA stmt = if (getLabel stmt) `elem` extremalLabels
+                    then map (\x -> (x, extremalValue)) extremalLabels
+                    else map (\x -> (x, [])) ((getLabels stmt) L.\\ extremalLabels)
+
+mfpIteration a [] t s set ion  = a
+mfpIteration a w@((l1, l2) : ws) transferFunctions stms setType ion =
+  let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else []) a
+      a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else []) a
+      fla1 = transferFunctions a1 l1 stms
+   in if setType == True
+         then mfpIteration (updateA (checkSuperSet (isSuperSet fla1 a2) a2 fla1)) ws transferFunctions stms setType ion
+      else mfpIteration (updateA (checkSuperSet (isSuperSet a2 fla1) a2 fla1)) ws transferFunctions stms setType ion
+        where checkSuperSet bool a2 fla1 | bool = if ion == True
+                                                  then (l1, a2 ++ fla1)
+                                                  else (l2, a2 L.\\ fla1)
+                                         | otherwise = (l2, a2)
+              updateA newA = (filter (\(x, y) -> l2 /= x) a) ++ [newA]
+
+isSuperSet :: [String] -> [String] -> Bool
+isSuperSet _ [] = True
+isSuperSet x (a:as) | a `elem` x = isSuperSet x as
+                    | otherwise = False
+
+
+-- x1 = cpTransferFunction (getStat l1 s)
+--
+--data State = Top | Bottom | Num Int | VarX String
+--
+--type Sigma = [(String, State)]
+--
+--cpTransferFunction :: Stat' -> Sigma -> [String]
+--cpTransferFunction (Skip' _) s         = s
+--cpTransferFunction (IAssign' _ x a) s | null s =  []
+--  | otherwise = s ++ (x, (acp a s))
+--
+--cpTransferFunction (BAssign' _ _ _) s = s
+--cpTransferFunction _                  = []
+--
+--acp (IConst v) s = Num v
+--acp (Var n) s = Num (snd (head ((filter (\(x1,x2) -> x1 == n)) s)))
+--acp (Plus a1 a2) = Num (+ (toVal (acp a1)) (toVal (acp a2)))
+--acp (Minus a1 a2) = Num (- (toVal (acp a1)) (toVal (acp a2)))
+--acp (Times a1 a2) = Num (* (toVal (acp a1)) (toVal (acp a2)))
+--acp (Divide a1 a2) = Num (div (toVal (acp a1)) (toVal (acp a2)))
+--
+--toVal (Num x) = x
 
 getSuperset :: [String] -> [String] -> Bool
 getSuperset _ [] = True
