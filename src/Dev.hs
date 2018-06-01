@@ -106,18 +106,32 @@ getLabels (While' i _ s)          = [i] ++ (getLabels s)
 getLabels (Seq' s1 s2)            = (getLabels s1) ++ (getLabels s2)
 
 
---            let lattice       = allVars s -- moet nog
-
---cp p@(Program' _ s) flow =
-----            let lattice       = allVars s -- moet nog
---            let transitions   = flow s
---                extremalLabel = [initStat s]
---                extremalValue = map (\x -> (x, [0])) (map getLabel (allVars2 s))
-----                bottomList    = map (\x -> (x, [])) ((getLabel s) L.\\ extremalLabel) -- A init p96
-----                extremalList  = map (\x -> (x, extremalValue)) extremalLabel
---                a             = extremalValue -- bottomList ++ extremalList
---             in mfpIteration transitions a s p  -- S = W from book/slides
+          
+                -- inmfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s  -- S = W from book/slides
+-- x1 = cpTransferFunction (getStat l1 s)
 --
+--data State = Top | Bottom | Num Int | VarX String
+--
+--type Sigma = [(String, State)]
+--
+--cpTransferFunction :: Stat' -> Sigma -> [String]
+--cpTransferFunction (Skip' _) s         = s
+--cpTransferFunction (IAssign' _ x a) s | null s =  []
+--  | otherwise = s ++ (x, (acp a s))
+--
+--cpTransferFunction (BAssign' _ _ _) s = s
+--cpTransferFunction _                  = []
+--
+--acp (IConst v) s = Num v
+--acp (Var n) s = Num (snd (head ((filter (\(x1,x2) -> x1 == n)) s)))
+--acp (Plus a1 a2) = Num (+ (toVal (acp a1)) (toVal (acp a2)))
+--acp (Minus a1 a2) = Num (- (toVal (acp a1)) (toVal (acp a2)))
+--acp (Times a1 a2) = Num (* (toVal (acp a1)) (toVal (acp a2)))
+--acp (Divide a1 a2) = Num (div (toVal (acp a1)) (toVal (acp a2)))
+             
+
+
+
 
 getStat l s =  getStat' l (statToStatList s)
 
@@ -146,6 +160,18 @@ getStat' _ _ = Skip' 0
 --                                        newA = a ++ [newA2]
 --                                    in  mfpIteration xs newA s p
 --
+
+
+cp p@(Program' _ s) =
+  let transitions   = flow s
+      extremalLabels = [initStat s]
+      --extremalValue = map (\x -> (x, [0])) (map getLabel (allVars s))
+      --bottomList    = map (\x -> (x, [])) ((getLabel s) L.\\ extremalLabels) -- A init p96
+      --extremalList  = map (\x -> (x, extremalValue)) extremalLabels
+      --a             = extremalValue -- bottomList ++ extremalList        
+  in transitions   
+
+
 slv p@(Program' _ s) =
             let transitions   = reversedFlow s
                 extremalLabels = final s
@@ -155,17 +181,23 @@ slv p@(Program' _ s) =
                 a             = bottomList ++ extremalList
              in mfp (statToStatList s) transitions extremalLabels extremalValue slvTransferFunction [] True True s -- cleanup s/slist
 
-slvTransferFunction a1 label stms = (a1 L.\\ kill (getStat label stms)) ++ gen (getStat label stms)
 
+slvTransferFunction :: [String] -> Int -> Stat' -> [String]      
+slvTransferFunction a1 label stm = (a1 L.\\ kill (getStat label stm)) ++ gen (getStat label stm)
+
+
+mfp :: Eq a =>[Stat'] -> [(Int,Int)] -> [Int] -> [a] -> ([a] -> Int -> Stat' -> [a]) -> [a] -> Bool -> Bool -> Stat' -> [(Int, [a])]  
 mfp stms transitions extremalLabels extremalValue transferFunctions bottom setType ion s = let a = mfpInit s extremalLabels extremalValue bottom
                                                                                                w = transitions
                                                                                            in mfpIteration a w transferFunctions s setType ion
 
+mfpInit :: Stat' -> [Int] -> [a] -> [a] ->  [(Int, [a])]                                                                                         
 mfpInit statements extremalLabels extremalValue bottom = setA statements
   where setA stmt = if (getLabel stmt) `elem` extremalLabels
                     then map (\x -> (x, extremalValue)) extremalLabels
                     else map (\x -> (x, [])) ((getLabels stmt) L.\\ extremalLabels)
 
+mfpIteration :: Eq a => [(Int , [a])] -> [(Int,Int)] -> ([a] -> Int -> Stat' -> [a]) -> Stat' -> Bool -> Bool -> [(Int , [a])]          
 mfpIteration a [] t s set ion  = a
 mfpIteration a w@((l1, l2) : ws) transferFunctions stms setType ion =
   let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else []) a
@@ -180,7 +212,7 @@ mfpIteration a w@((l1, l2) : ws) transferFunctions stms setType ion =
                                          | otherwise = (l2, a2)
               updateA newA = (filter (\(x, y) -> l2 /= x) a) ++ [newA]
 
-isSuperSet :: [String] -> [String] -> Bool
+isSuperSet :: Eq a => [a] -> [a] -> Bool
 isSuperSet _ [] = True
 isSuperSet x (a:as) | a `elem` x = isSuperSet x as
                     | otherwise = False
