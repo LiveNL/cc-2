@@ -33,14 +33,14 @@ runAnalysis' analyze programName = do
   putStrLn "G'bye"
 
 -- parse program
-parse :: String -> IO [(Int, [String])]
+parse :: String -> IO [(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
 parse programName = do
-  let programName = "college"
+  --let programName = "college"
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
   let (freshLabel, t) = sem_Program (happy . alex $ content) 1
   let f = getFlow t
-  return (slv t)
+  return  (cp t)
 
 getFlow (Program' p s) = flow s
 
@@ -162,14 +162,92 @@ getStat' _ _ = Skip' 0
 --
 
 
+-- type a needs to be (var + restult)
+
+data Result = Top | Bottum | Num Int deriving (Show, Eq)
+
+getVarStatements (Skip' i)               = []
+getVarStatements a@(IAssign' i s _ )     = [s]
+getVarStatements b@(BAssign' i s _ )     = [s]
+getVarStatements (IfThenElse' i _ s1 s2) = getVarStatements s1 ++ getVarStatements s2
+getVarStatements (While' i _ s)          = getVarStatements s
+getVarStatements (Seq' s1 s2)            = getVarStatements s1 ++ getVarStatements s2
+
+
+-- extremalValue ==  (varname , Top)
+
+
 cp p@(Program' _ s) =
-  let transitions   = flow s
+  let transitions    = flow s
       extremalLabels = [initStat s]
-      --extremalValue = map (\x -> (x, [0])) (map getLabel (allVars s))
-      --bottomList    = map (\x -> (x, [])) ((getLabel s) L.\\ extremalLabels) -- A init p96
-      --extremalList  = map (\x -> (x, extremalValue)) extremalLabels
-      --a             = extremalValue -- bottomList ++ extremalList        
-  in transitions   
+      extremalValue  = map (\x -> (x, Top)) (getVarStatements s)  --map (\(x,x1) -> (x, [(x1 ,Top)])) (map (\x-> (getLabel x, allVars x)) (getVarStatements s)) 
+      in mfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s   
+
+
+cpTransferFunction :: [(String, Result)] -> Int -> Stat' -> [(String, Result)]      
+cpTransferFunction a1 label stmt =  cpTransferFunction' a1 stmt--(a1 L.\\ kill (getStat label stm)) ++ gen (getStat label stm)
+
+
+cpTransferFunction' :: [(String, Result)] -> Stat' -> [(String, Result)]
+cpTransferFunction' s (Skip' _)          = []
+cpTransferFunction' s (IAssign' _ x a)  | null s =  []
+                                        | otherwise = (removeItem x s) ++ [(x, (acp a s))]
+cpTransferFunction' s (BAssign' _ _ _)   = s
+cpTransferFunction' s (IfThenElse' i _ s1 s2) = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
+cpTransferFunction' s (While' i _ s1)         = cpTransferFunction' s s1
+cpTransferFunction' s (Seq' s1 s2)            = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
+
+removeItem _ []              = []
+removeItem x (y@(x1,x2):ys) | x == x1   = removeItem x ys
+                            | otherwise = y : removeItem x ys 
+
+
+acp ::  IExpr -> [(String, Result)] -> Result
+acp (IConst v) s = Num v
+acp (Var n) s = snd (head ((filter (\(x1,x2) -> x1 == n)) s))  --[Num (snd (head ((filter (\(x1,x2) -> x1 == n)) s)))]
+
+acp (Plus a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ((toVal (acp a1 s)) + (toVal (acp a2 s)))
+                   | otherwise = Top
+acp (Minus a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) - (toVal (acp a2 s)))
+                    | otherwise = Top  
+acp (Times a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) * (toVal (acp a2 s)))
+                    | otherwise = Top 
+acp (Divide a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num (div (toVal (acp a1 s)) (toVal (acp a2 s)))
+                     | otherwise = Top 
+
+--acp (Plus a1 a2) s = Num ((toVal (acp a1 s)) + (toVal (acp a2 s)))
+--acp (Minus a1 a2) s = Num ( (toVal (acp a1 s)) - (toVal (acp a2 s)))
+--acp (Times a1 a2) s = Num ( (toVal (acp a1 s)) * (toVal (acp a2 s)))
+--acp (Divide a1 a2) s = Num (div (toVal (acp a1 s)) (toVal (acp a2 s)))
+
+topOrNum (Num _) (Num _) = True
+topOrNum _ _             = False
+
+toVal (Num x) = x
+
+-- x1 = cpTransferFunction (getStat l1 s)
+--
+--data State = Top | Bottom | Num Int | VarX String
+--
+--type Sigma = [(String, State)]
+--
+--cpTransferFunction :: Stat' -> Sigma -> [String]
+--cpTransferFunction (Skip' _) s         = s
+--cpTransferFunction (IAssign' _ x a) s | null s =  []
+--  | otherwise = s ++ (x, (acp a s))
+--
+--cpTransferFunction (BAssign' _ _ _) s = s
+--cpTransferFunction _                  = []
+--
+--acp (IConst v) s = Num v
+--acp (Var n) s = Num (snd (head ((filter (\(x1,x2) -> x1 == n)) s)))
+--acp (Plus a1 a2) = Num (+ (toVal (acp a1)) (toVal (acp a2)))
+--acp (Minus a1 a2) = Num (- (toVal (acp a1)) (toVal (acp a2)))
+--acp (Times a1 a2) = Num (* (toVal (acp a1)) (toVal (acp a2)))
+--acp (Divide a1 a2) = Num (div (toVal (acp a1)) (toVal (acp a2)))
+--
+--toVal (Num x) = x
+
 
 
 slv p@(Program' _ s) =
