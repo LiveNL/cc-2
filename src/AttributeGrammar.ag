@@ -86,16 +86,10 @@ data Code | CBExpr   BExpr
           | CStat    Stat'
           | CProc    Proc'
           | CProgram Program'
-data Procs
-  | Cons          proc :: Proc procs :: Procs
-  | Nil
-deriving Procs : Show
 
-data Procs'
-  | Cons'         proc :: Proc' procs :: Procs'
-  | Nil'
-deriving Procs' : Show
 
+type Procs = [Proc]
+type Procs' = [Proc']
 type Exprs = [Expr]
 
 
@@ -103,31 +97,30 @@ attr Program
   chn label       :: Int
   syn program     :: Program'
 
-attr Procs
+attr Stat
   chn label       :: Int
-  syn procs       :: Procs'
+  syn stat        :: Stat'
 
 attr Proc
   chn label       :: Int
   syn proc        :: Proc'
 
-attr Stat
+attr Procs
   chn label       :: Int
-  syn stat        :: Stat'
+  syn procs       :: Procs'
 
 sem Program
   | Program       lhs.program = Program' @procs.procs @stat.stat
 
-
-sem Procs
-  | Cons          lhs.procs   = Cons' @proc.proc @procs.procs
-  | Nil           lhs.procs   = Nil'
-
+ sem Procs
+  | Cons          lhs.procs   = @hd.proc : @tl.procs
+  | Nil           lhs.procs   = []
 
 sem Proc
   | Proc          lhs.proc    = Proc' @lhs.label (@lhs.label + 1) @name @inp @out @stat.stat
                   stat.label  = @lhs.label + 2
                   lhs.label   = @stat.label
+
 
 sem Stat
   | Skip          lhs.stat    = Skip' @lhs.label

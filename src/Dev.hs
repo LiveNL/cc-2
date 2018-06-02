@@ -34,14 +34,14 @@ runAnalysis' analyze programName = do
   putStrLn "G'bye"
 
 -- parse program
-parse :: String -> IO [(Int,Int)]  --[(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
+parse :: String -> IO [(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
 parse programName = do
   --let programName = "college"
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
-  let (freshLabel, p) = sem_Program (happy . alex $ content) 1
+  let (label, p) = sem_Program (happy . alex $ content) 1
   let f = getFlow p
-  return f--(cp t)
+  return (cp p)
 
 getAgInit p = let  (finalAg, flowAg, initAg) = sem_Program' p
               in initAg
@@ -90,7 +90,7 @@ flow (BAssign' i _ _ ) _      = []
 flow (IfThenElse' i _ s1 s2) p = flow s1 p ++ flow s2 p ++ [(i, initStat s1),(i, initStat s2)]
 flow (While' i c s) p          = flow s p ++ [(i,initStat s)] ++ map (\x -> (x,i)) (final s)
 flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2)) (final s1)
-flow (Call' i e name params out) pr@(Cons' p ps) = [(i,n),(x,e)]
+flow (Call' i e name params out) pr@(p: ps) = [(i,n),(x,e)]
  where n = fst (findProcLabels name p ps)
        x = snd (findProcLabels name p ps)
 
@@ -98,8 +98,8 @@ findProcLabels name (Proc' e r procName _ _ _) ps = if name == procName
                                            then (e, r)
                                            else findProcLabels name (fstP ps) (sndP ps)
 
-fstP (Cons' p ps) = p
-sndP (Cons' p ps) = ps
+fstP (p:ps) = p
+sndP (p:ps) = ps
 
 reversedFlow :: Stat' -> Procs' -> [(Int, Int)]
 reversedFlow s p = map (\(x,y) -> (y,x)) (flow s p)
@@ -206,7 +206,7 @@ getVarStatements (BAssign' i s _ ) _       = [s]
 getVarStatements (IfThenElse' i _ s1 s2) p = getVarStatements s1 p ++ getVarStatements s2 p
 getVarStatements (While' i _ s) p          = getVarStatements s p
 getVarStatements (Seq' s1 s2) p            = getVarStatements s1 p ++ getVarStatements s2 p
-getVarStatements (Call' _ _ name _ _ ) pr@(Cons' p ps) = getVarStatements (findProc name p ps) pr
+getVarStatements (Call' _ _ name _ _ ) pr@(p: ps) = getVarStatements (findProc name p ps) pr
 
 findProc name p@(Proc' e r procName _ _ s) ps = if name == procName
                                                 then s
