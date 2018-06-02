@@ -34,14 +34,19 @@ runAnalysis' analyze programName = do
   putStrLn "G'bye"
 
 -- parse program
-parse :: String -> IO [(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
+--type SLV =
+type SLV = [(Int, [String])]
+type CP = [(Int, (String, Result))] --CP | SLV
+
+--parse :: String -> IO [(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
+parse :: String -> IO SLV--uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
 parse programName = do
   --let programName = "college"
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
   let (freshLabel, t) = sem_Program (happy . alex $ content) 1
   let f = getFlow t
-  return  (cp t)
+  return  (slv t)
 
 getFlow (Program' p s) = flow s p
 
@@ -64,14 +69,14 @@ final (While' i _ _)          = [i]
 final (Seq' _ s2)             = final s2
 final (Call' _ e _ _ _)       = [e]
 
-flow :: Stat' -> Procs' -> [(Int, Int)]
+flow :: Stat' -> Procs' -> [(Int, Int, Int)]
 flow (Skip' i) _               = []
 flow (IAssign' i _ _ ) _       = []
 flow (BAssign' i _ _ ) _      = []
-flow (IfThenElse' i _ s1 s2) p = flow s1 p ++ flow s2 p ++ [(i, initStat s1),(i, initStat s2)]
-flow (While' i c s) p          = flow s p ++ [(i,initStat s)] ++ map (\x -> (x,i)) (final s)
-flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2)) (final s1)
-flow (Call' i e name params out) pr@(Cons' p ps) = [(i,n),(x,e)]
+flow (IfThenElse' i _ s1 s2) p = flow s1 p ++ flow s2 p ++ [(i, initStat s1,0),(i, initStat s2,0)]
+flow (While' i c s) p          = flow s p ++ [(i,initStat s, 0)] ++ map (\x -> (x,i, 0)) (final s)
+flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2, 0)) (final s1)
+flow (Call' i e name params out) pr@(Cons' p ps) = [(i,n,1),(x,e,1)]
  where n = fst (findProcLabels name p ps)
        x = snd (findProcLabels name p ps)
 
@@ -82,8 +87,8 @@ findProcLabels name (Proc' e r procName _ _ _) ps = if name == procName
 fstP (Cons' p ps) = p
 sndP (Cons' p ps) = ps
 
-reversedFlow :: Stat' -> Procs' -> [(Int, Int)]
-reversedFlow s p = map (\(x,y) -> (y,x)) (flow s p)
+reversedFlow :: Stat' -> Procs' -> [(Int, Int, Int)]
+reversedFlow s p = map (\(x,y,z) -> (y,x,z)) (flow s p)
 
 -- complete lattice:
 -- misschien moeten de statements uit de toegevoegde onderdelen nog wel en alleen label en cnd worden
@@ -119,6 +124,7 @@ getLabels (BAssign' i _ _ )       = [i]
 getLabels (IfThenElse' i _ s1 s2) = [i] ++ getLabels s1 ++ getLabels s2
 getLabels (While' i _ s)          = [i] ++ (getLabels s)
 getLabels (Seq' s1 s2)            = (getLabels s1) ++ (getLabels s2)
+getLabels (Call' i _ _ _ _)        = [i]
 
 
 
@@ -187,7 +193,8 @@ getVarStatements (BAssign' i s _ ) _       = [s]
 getVarStatements (IfThenElse' i _ s1 s2) p = getVarStatements s1 p ++ getVarStatements s2 p
 getVarStatements (While' i _ s) p          = getVarStatements s p
 getVarStatements (Seq' s1 s2) p            = getVarStatements s1 p ++ getVarStatements s2 p
-getVarStatements (Call' _ _ name _ _ ) pr@(Cons' p ps) = getVarStatements (findProc name p ps) pr
+-- getVarStatements (Call' _ _ name _ _ ) pr@(Cons' p ps) = getVarStatements (findProc name p ps) pr -- TODO. Dit moet waarschijnlijk
+getVarStatements (Call' _ _ _ _ _) p = []
 
 findProc name p@(Proc' e r procName _ _ s) ps = if name == procName
                                                 then s
@@ -284,7 +291,7 @@ slvTransferFunction :: [String] -> Int -> Stat' -> [String]
 slvTransferFunction a1 label stm = (a1 L.\\ kill (getStat label stm)) ++ gen (getStat label stm)
 
 
-mfp :: Eq a =>[Stat'] -> [(Int,Int)] -> [Int] -> [a] -> ([a] -> Int -> Stat' -> [a]) -> [a] -> Bool -> Bool -> Stat' -> [(Int, [a])]
+mfp :: Eq a =>[Stat'] -> [(Int,Int, Int)] -> [Int] -> [a] -> ([a] -> Int -> Stat' -> [a]) -> [a] -> Bool -> Bool -> Stat' -> [(Int, [a])]
 mfp stms transitions extremalLabels extremalValue transferFunctions bottom setType ion s = let a = mfpInit s extremalLabels extremalValue bottom
                                                                                                w = transitions
                                                                                            in mfpIteration a w transferFunctions s setType ion
@@ -295,9 +302,9 @@ mfpInit statements extremalLabels extremalValue bottom = setA statements
                     then map (\x -> (x, extremalValue)) extremalLabels
                     else map (\x -> (x, [])) ((getLabels stmt) L.\\ extremalLabels)
 
-mfpIteration :: Eq a => [(Int , [a])] -> [(Int,Int)] -> ([a] -> Int -> Stat' -> [a]) -> Stat' -> Bool -> Bool -> [(Int , [a])]
+mfpIteration :: Eq a => [(Int , [a])] -> [(Int,Int,Int)] -> ([a] -> Int -> Stat' -> [a]) -> Stat' -> Bool -> Bool -> [(Int , [a])]
 mfpIteration a [] t s set ion  = a
-mfpIteration a w@((l1, l2) : ws) transferFunctions stms setType ion =
+mfpIteration a w@((l1, l2, _) : ws) transferFunctions stms setType ion =
   let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else []) a
       a2 = concatMap (\(x1,x2) -> if x1 == l2 then x2 else []) a
       fla1 = transferFunctions a1 l1 stms
@@ -383,7 +390,7 @@ freeVarsB (Not x)            = freeVarsB x
 -- tranfer functions live variable
 transferFunctionExit :: Program' -> Int -> [String]
 transferFunctionExit p@(Program' procs s) i | i `elem` (final s) = []
-  | otherwise = concatMap (\(ll1, ll2) -> transferFunctionEntry p ll1) (filter (\(l1, l2) -> l2 == i) (reversedFlow s procs))
+  | otherwise = concatMap (\(ll1, ll2, _) -> transferFunctionEntry p ll1) (filter (\(l1, l2, _) -> l2 == i) (reversedFlow s procs))
 
 transferFunctionEntry :: Program' -> Int -> [String]
 transferFunctionEntry p@(Program' _ s) i = ((transferFunctionExit p i) L.\\ kill block) ++ gen block
