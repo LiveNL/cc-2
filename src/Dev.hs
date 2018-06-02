@@ -44,9 +44,27 @@ parse programName = do
   --let programName = "college"
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
-  let (freshLabel, t) = sem_Program (happy . alex $ content) 1
-  let f = getFlow t
-  return  (slv t)
+  let (label, p) = sem_Program (happy . alex $ content) 1
+  let f = getFlow p
+  return (cp p)
+
+getAgInit p = let  (finalAg, flowAg, initAg) = sem_Program' p
+              in initAg
+
+getAgFinal p = let  (finalAg, flowAg, initAg) = sem_Program' p
+               in finalAg
+
+getAgFlow p = let  (finalAg, flowAg, initAg) = sem_Program' p
+              in flowAg
+
+getAgInitWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                      in initAg
+
+getAgFinalWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                       in finalAg
+
+getAgFlowWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                      in flowAg
 
 getFlow (Program' p s) = flow s p
 
@@ -74,9 +92,9 @@ flow (Skip' i) _               = []
 flow (IAssign' i _ _ ) _       = []
 flow (BAssign' i _ _ ) _      = []
 flow (IfThenElse' i _ s1 s2) p = flow s1 p ++ flow s2 p ++ [(i, initStat s1,0),(i, initStat s2,0)]
-flow (While' i c s) p          = flow s p ++ [(i,initStat s, 0)] ++ map (\x -> (x,i, 0)) (final s)
-flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2, 0)) (final s1)
-flow (Call' i e name params out) pr@(Cons' p ps) = [(i,n,1),(x,e,1)]
+flow (While' i c s) p          = flow s p ++ [(i,initStat s,0)] ++ map (\x -> (x,i,0)) (final s)
+flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2,0)) (final s1)
+flow (Call' i e name params out) pr@(p: ps) = [(i,n,1),(x,e,1)]
  where n = fst (findProcLabels name p ps)
        x = snd (findProcLabels name p ps)
 
@@ -84,8 +102,8 @@ findProcLabels name (Proc' e r procName _ _ _) ps = if name == procName
                                            then (e, r)
                                            else findProcLabels name (fstP ps) (sndP ps)
 
-fstP (Cons' p ps) = p
-sndP (Cons' p ps) = ps
+fstP (p:ps) = p
+sndP (p:ps) = ps
 
 reversedFlow :: Stat' -> Procs' -> [(Int, Int, Int)]
 reversedFlow s p = map (\(x,y,z) -> (y,x,z)) (flow s p)
@@ -193,7 +211,7 @@ getVarStatements (BAssign' i s _ ) _       = [s]
 getVarStatements (IfThenElse' i _ s1 s2) p = getVarStatements s1 p ++ getVarStatements s2 p
 getVarStatements (While' i _ s) p          = getVarStatements s p
 getVarStatements (Seq' s1 s2) p            = getVarStatements s1 p ++ getVarStatements s2 p
--- getVarStatements (Call' _ _ name _ _ ) pr@(Cons' p ps) = getVarStatements (findProc name p ps) pr -- TODO. Dit moet waarschijnlijk
+-- getVarStatements (Call' _ _ name _ _ ) pr@(p:ps) = getVarStatements (findProc name p ps) pr -- TODO. Dit moet waarschijnlijk
 getVarStatements (Call' _ _ _ _ _) p = []
 
 findProc name p@(Proc' e r procName _ _ s) ps = if name == procName

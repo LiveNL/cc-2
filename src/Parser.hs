@@ -918,13 +918,13 @@ happyReduce_3 = happySpecReduce_2  6 happyReduction_3
 happyReduction_3 (HappyAbsSyn7  happy_var_2)
 	(HappyAbsSyn6  happy_var_1)
 	 =  HappyAbsSyn6
-		 (procAppend happy_var_1 (Cons happy_var_2 Nil)
+		 (happy_var_1 ++ [ happy_var_2 ]
 	)
 happyReduction_3 _ _  = notHappyAtAll 
 
 happyReduce_4 = happySpecReduce_0  6 happyReduction_4
 happyReduction_4  =  HappyAbsSyn6
-		 (Nil
+		 ([ ]
 	)
 
 happyReduce_5 = happyReduce 9 7 happyReduction_5
@@ -1491,10 +1491,6 @@ happySeq = happyDontSeq
 
 parseError :: [Token] -> a
 parseError (x:xs) = error ("Parse error: " ++ show xs)
-
-procAppend :: Procs -> Procs -> Procs
-procAppend Nil ys = ys
-procAppend (Cons x xs) ys = Cons x (procAppend xs ys)
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 {-# LINE 1 "<built-in>" #-}

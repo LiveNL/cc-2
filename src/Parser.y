@@ -67,8 +67,8 @@ Start : Program { $1 }
 
 Program : begin Procs Stats end  { Program $2 $3 }
 
-Procs : Procs Proc  { procAppend $1 (Cons $2 Nil) }
-      | {- empty -}  { Nil }
+Procs : Procs Proc   { $1 ++ [ $2 ] }
+      | {- empty -}  { [ ] }
 Proc  : proc ident "(" ValArgs ResArg ")" is Stats end  { Proc $2 $4 $5 $8 }
 
 ValArgs : val Args ","  { $2 }
@@ -135,8 +135,5 @@ BExpr0 : bool              { BConst $1 }
 parseError :: [Token] -> a
 parseError (x:xs) = error ("Parse error: " ++ show xs)
 
-procAppend :: Procs -> Procs -> Procs
-procAppend Nil ys = ys
-procAppend (Cons x xs) ys = Cons x (procAppend xs ys)
 }
 
