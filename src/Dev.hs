@@ -33,16 +33,37 @@ runAnalysis' analyze programName = do
   putStrLn "G'bye"
 
 -- parse program
-parse :: String -> IO [(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
+parse :: String -> IO [(Int,Int)]  --[(Int, [(String, Result)])] --uitkomt moet gegeneraliseerd worden, nu uitkomst van cp
 parse programName = do
   --let programName = "college"
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
-  let (freshLabel, t) = sem_Program (happy . alex $ content) 1
-  let f = getFlow t
-  return  (cp t)
+  let (freshLabel, p) = sem_Program (happy . alex $ content) 1
+  let f = getFlow p
+  return f--(cp t)
 
-getFlow (Program' p s) = flow s
+getFlow (Program' p s) = getAgFlowWithStat s
+
+
+getAgInit p = let  (finalAg, flowAg, initAg) = sem_Program' p
+              in initAg
+
+getAgFinal p = let  (finalAg, flowAg, initAg) = sem_Program' p
+               in finalAg
+
+getAgFlow p = let  (finalAg, flowAg, initAg) = sem_Program' p
+              in flowAg
+
+getAgInitWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                      in initAg
+
+getAgFinalWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                       in finalAg
+
+getAgFlowWithStat s = let  (finalAg, flowAg, initAg) = sem_Stat' s
+                      in flowAg
+
+
 
 -- write in AG
 initStat :: Stat' -> Int

@@ -118,6 +118,7 @@ attr Stat
 sem Program
   | Program       lhs.program = Program' @procs.procs @stat.stat
 
+
 sem Procs
   | Cons          lhs.procs   = Cons' @proc.proc @procs.procs
   | Nil           lhs.procs   = Nil'
@@ -158,3 +159,45 @@ sem Stat
                   lhs.label   = @lhs.label + 1
   | Break         lhs.stat    = Break' @lhs.label
                   lhs.label   = @lhs.label + 1
+
+attr Program' Stat'
+  syn initStatAG :: Int
+  syn finalAG    :: {[Int]}
+  syn flowAG     :: {[(Int,Int)]}
+
+
+sem Program'
+   | Program'     --lhs.flow = @stat.edges
+                  lhs.initStatAG = @stat.initStatAG
+                  lhs.finalAG    = @stat.finalAG
+                  lhs.flowAG     = @stat.flowAG
+
+sem Stat' 
+   | Skip'        lhs.initStatAG = @label 
+                  lhs.finalAG    = [@label]
+                  lhs.flowAG     = []
+
+   | IfThenElse'  lhs.initStatAG = @labelc
+                  lhs.finalAG    = [@labelc] ++ @stat1.finalAG ++ @stat2.finalAG
+                  lhs.flowAG     = @stat1.flowAG ++ @stat2.flowAG ++ [(@labelc, @stat1.initStatAG),(@labelc, @stat2.initStatAG)]
+
+   | While'       lhs.initStatAG = @labelc 
+                  lhs.finalAG    = [@labelc]
+                  lhs.flowAG     = @stat.flowAG ++ [(@labelc , @stat.initStatAG)] ++ map (\x -> (x,@labelc)) @stat.finalAG
+
+   | IAssign'     lhs.initStatAG = @label
+                  lhs.finalAG    = [@label]
+                  lhs.flowAG     = []
+
+   | BAssign'     lhs.initStatAG = @label 
+                  lhs.finalAG    = [@label]
+                  lhs.flowAG     = []
+
+   | Seq'         lhs.initStatAG = @stat1.initStatAG 
+                  lhs.finalAG    = @stat2.finalAG 
+                  lhs.flowAG     = @stat1.flowAG ++ @stat2.flowAG ++ map (\x -> (x,@stat2.initStatAG)) @stat1.finalAG
+
+
+
+
+ 
