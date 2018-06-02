@@ -7,6 +7,7 @@ import AttributeGrammar
 import Lexer
 import Main
 import Parser
+import Debug.Trace
 
 -- To make it all compile for the moment:
 type Analysis a = [a]
@@ -42,7 +43,7 @@ parse programName = do
   let f = getFlow t
   return  (cp t)
 
-getFlow (Program' p s) = flow s
+getFlow (Program' p s) = flow s p
 
 -- write in AG
 initStat :: Stat' -> Int
@@ -52,6 +53,7 @@ initStat (BAssign' i _ _)      = i
 initStat (IfThenElse' i _ _ _) = i
 initStat (While' i _ _)        = i
 initStat (Seq' s1 _)           = initStat s1
+initStat (Call' i _ _ _ _)     = i
 
 final :: Stat' -> [Int]
 final (Skip' i)               = [i]
@@ -60,17 +62,28 @@ final (BAssign' i _ _ )       = [i]
 final (IfThenElse' i _ s1 s2) = final s1 ++ final s2
 final (While' i _ _)          = [i]
 final (Seq' _ s2)             = final s2
+final (Call' _ e _ _ _)       = [e]
 
-flow :: Stat' -> [(Int, Int)]
-flow (Skip' i)               = []
-flow (IAssign' i _ _ )       = []
-flow (BAssign' i _ _ )       = []
-flow (IfThenElse' i _ s1 s2) = flow s1 ++ flow s2 ++ [(i, initStat s1),(i, initStat s2)]
-flow (While' i c s)          = flow s ++ [(i,initStat s)] ++ map (\x -> (x,i)) (final s)
-flow (Seq' s1 s2)            = flow s1 ++ flow s2 ++ map (\x -> (x,initStat s2)) (final s1)
+flow :: Stat' -> Procs' -> [(Int, Int)]
+flow (Skip' i) _               = []
+flow (IAssign' i _ _ ) _       = []
+flow (BAssign' i _ _ ) _      = []
+flow (IfThenElse' i _ s1 s2) p = flow s1 p ++ flow s2 p ++ [(i, initStat s1),(i, initStat s2)]
+flow (While' i c s) p          = flow s p ++ [(i,initStat s)] ++ map (\x -> (x,i)) (final s)
+flow (Seq' s1 s2) p           = flow s1 p ++ flow s2 p ++ map (\x -> (x,initStat s2)) (final s1)
+flow (Call' i e name params out) pr@(Cons' p ps) = [(i,n),(x,e)]
+ where n = fst (findProcLabels name p ps)
+       x = snd (findProcLabels name p ps)
 
-reversedFlow :: Stat' -> [(Int, Int)]
-reversedFlow s = map (\(x,y) -> (y,x)) (flow s)
+findProcLabels name (Proc' e r procName _ _ _) ps = if name == procName
+                                           then (e, r)
+                                           else findProcLabels name (fstP ps) (sndP ps)
+
+fstP (Cons' p ps) = p
+sndP (Cons' p ps) = ps
+
+reversedFlow :: Stat' -> Procs' -> [(Int, Int)]
+reversedFlow s p = map (\(x,y) -> (y,x)) (flow s p)
 
 -- complete lattice:
 -- misschien moeten de statements uit de toegevoegde onderdelen nog wel en alleen label en cnd worden
@@ -83,13 +96,14 @@ statToStatList (BAssign' i a b)        = [BAssign' i a b]
 statToStatList (IfThenElse' i c s1 s2) = [IfThenElse' i c s1 s2] ++ (statToStatList s1) ++ (statToStatList s2)
 statToStatList (While' i c s)          = [While' i c s] ++ (statToStatList s)
 statToStatList (Seq' s1 s2)            = (statToStatList s1)  ++ (statToStatList s2)
+-- statToStatList Call'? TODO
 statToStatList _                       = [Skip' 0]
 
-allVars :: Stat' -> [String]
-allVars (Skip' _)          = []
-allVars (IAssign' _ _ val) = freeVarsI val
-allVars (BAssign' _ _ val) = freeVarsB val
-allVars _                  = []
+--allVars :: Stat' -> [String]
+--allVars (Skip' _)          = []
+--allVars (IAssign' _ _ val) = freeVarsI val
+--allVars (BAssign' _ _ val) = freeVarsB val
+--allVars _                  = []
 
 getLabel (Skip' i)               = i
 getLabel (IAssign' i _ _ )       = i
@@ -97,6 +111,7 @@ getLabel (BAssign' i _ _ )       = i
 getLabel (IfThenElse' i _ s1 s2) = i
 getLabel (While' i _ s)          = i
 getLabel (Seq' s1 _)             = getLabel s1
+getLabel (Call' i _ _ _ _)       = i -- TODO check
 
 getLabels (Skip' i)               = [i]
 getLabels (IAssign' i _ _ )       = [i]
@@ -106,7 +121,7 @@ getLabels (While' i _ s)          = [i] ++ (getLabels s)
 getLabels (Seq' s1 s2)            = (getLabels s1) ++ (getLabels s2)
 
 
-          
+
                 -- inmfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s  -- S = W from book/slides
 -- x1 = cpTransferFunction (getStat l1 s)
 --
@@ -128,7 +143,7 @@ getLabels (Seq' s1 s2)            = (getLabels s1) ++ (getLabels s2)
 --acp (Minus a1 a2) = Num (- (toVal (acp a1)) (toVal (acp a2)))
 --acp (Times a1 a2) = Num (* (toVal (acp a1)) (toVal (acp a2)))
 --acp (Divide a1 a2) = Num (div (toVal (acp a1)) (toVal (acp a2)))
-             
+
 
 
 
@@ -166,25 +181,29 @@ getStat' _ _ = Skip' 0
 
 data Result = Top | Bottum | Num Int deriving (Show, Eq)
 
-getVarStatements (Skip' i)               = []
-getVarStatements a@(IAssign' i s _ )     = [s]
-getVarStatements b@(BAssign' i s _ )     = [s]
-getVarStatements (IfThenElse' i _ s1 s2) = getVarStatements s1 ++ getVarStatements s2
-getVarStatements (While' i _ s)          = getVarStatements s
-getVarStatements (Seq' s1 s2)            = getVarStatements s1 ++ getVarStatements s2
+getVarStatements (Skip' i) _               = []
+getVarStatements (IAssign' i s _ ) _       = [s]
+getVarStatements (BAssign' i s _ ) _       = [s]
+getVarStatements (IfThenElse' i _ s1 s2) p = getVarStatements s1 p ++ getVarStatements s2 p
+getVarStatements (While' i _ s) p          = getVarStatements s p
+getVarStatements (Seq' s1 s2) p            = getVarStatements s1 p ++ getVarStatements s2 p
+getVarStatements (Call' _ _ name _ _ ) pr@(Cons' p ps) = getVarStatements (findProc name p ps) pr
 
+findProc name p@(Proc' e r procName _ _ s) ps = if name == procName
+                                                then s
+                                                else findProc name (fstP ps) (sndP ps)
 
 -- extremalValue ==  (varname , Top)
 
 
-cp p@(Program' _ s) =
-  let transitions    = flow s
+cp (Program' p s) =
+  let transitions    = flow s p
       extremalLabels = [initStat s]
-      extremalValue  = map (\x -> (x, Top)) (getVarStatements s)  --map (\(x,x1) -> (x, [(x1 ,Top)])) (map (\x-> (getLabel x, allVars x)) (getVarStatements s)) 
-      in mfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s   
+      extremalValue  = map (\x -> (x, Top)) (getVarStatements s p)  --map (\(x,x1) -> (x, [(x1 ,Top)])) (map (\x-> (getLabel x, allVars x)) (getVarStatements s))
+      in mfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s
 
 
-cpTransferFunction :: [(String, Result)] -> Int -> Stat' -> [(String, Result)]      
+cpTransferFunction :: [(String, Result)] -> Int -> Stat' -> [(String, Result)]
 cpTransferFunction a1 label stmt =  cpTransferFunction' a1 stmt--(a1 L.\\ kill (getStat label stm)) ++ gen (getStat label stm)
 
 
@@ -196,24 +215,25 @@ cpTransferFunction' s (BAssign' _ _ _)   = s
 cpTransferFunction' s (IfThenElse' i _ s1 s2) = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
 cpTransferFunction' s (While' i _ s1)         = cpTransferFunction' s s1
 cpTransferFunction' s (Seq' s1 s2)            = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
+cpTransferFunction' s (Call' _ _ _ _ _)        = []
 
 removeItem _ []              = []
 removeItem x (y@(x1,x2):ys) | x == x1   = removeItem x ys
-                            | otherwise = y : removeItem x ys 
+                            | otherwise = y : removeItem x ys
 
 
 acp ::  IExpr -> [(String, Result)] -> Result
 acp (IConst v) s = Num v
 acp (Var n) s = snd (head ((filter (\(x1,x2) -> x1 == n)) s))  --[Num (snd (head ((filter (\(x1,x2) -> x1 == n)) s)))]
 
-acp (Plus a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ((toVal (acp a1 s)) + (toVal (acp a2 s)))
-                   | otherwise = Top
-acp (Minus a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) - (toVal (acp a2 s)))
-                    | otherwise = Top  
-acp (Times a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) * (toVal (acp a2 s)))
-                    | otherwise = Top 
+acp (Plus a1 a2) s   | topOrNum (acp a1 s) (acp a2 s) = Num ((toVal (acp a1 s)) + (toVal (acp a2 s)))
+                     | otherwise = Top
+acp (Minus a1 a2) s  | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) - (toVal (acp a2 s)))
+                     | otherwise = Top
+acp (Times a1 a2) s  | topOrNum (acp a1 s) (acp a2 s) = Num ( (toVal (acp a1 s)) * (toVal (acp a2 s)))
+                     | otherwise = Top
 acp (Divide a1 a2) s | topOrNum (acp a1 s) (acp a2 s) = Num (div (toVal (acp a1 s)) (toVal (acp a2 s)))
-                     | otherwise = Top 
+                     | otherwise = Top
 
 --acp (Plus a1 a2) s = Num ((toVal (acp a1 s)) + (toVal (acp a2 s)))
 --acp (Minus a1 a2) s = Num ( (toVal (acp a1 s)) - (toVal (acp a2 s)))
@@ -250,32 +270,32 @@ toVal (Num x) = x
 
 
 
-slv p@(Program' _ s) =
-            let transitions   = reversedFlow s
-                extremalLabels = final s
-                extremalValue = []
-                bottomList    = map (\x -> (x, [])) ((getLabels s) L.\\ extremalLabels)
-                extremalList  = map (\x -> (x, [])) extremalLabels
-                a             = bottomList ++ extremalList
-             in mfp (statToStatList s) transitions extremalLabels extremalValue slvTransferFunction [] True True s -- cleanup s/slist
+slv (Program' p s) =
+  let transitions   = reversedFlow s p
+      extremalLabels = final s
+      extremalValue = []
+      bottomList    = map (\x -> (x, [])) ((getLabels s) L.\\ extremalLabels)
+      extremalList  = map (\x -> (x, [])) extremalLabels
+      a             = bottomList ++ extremalList
+   in mfp (statToStatList s) transitions extremalLabels extremalValue slvTransferFunction [] True True s -- cleanup s/slist
 
 
-slvTransferFunction :: [String] -> Int -> Stat' -> [String]      
+slvTransferFunction :: [String] -> Int -> Stat' -> [String]
 slvTransferFunction a1 label stm = (a1 L.\\ kill (getStat label stm)) ++ gen (getStat label stm)
 
 
-mfp :: Eq a =>[Stat'] -> [(Int,Int)] -> [Int] -> [a] -> ([a] -> Int -> Stat' -> [a]) -> [a] -> Bool -> Bool -> Stat' -> [(Int, [a])]  
+mfp :: Eq a =>[Stat'] -> [(Int,Int)] -> [Int] -> [a] -> ([a] -> Int -> Stat' -> [a]) -> [a] -> Bool -> Bool -> Stat' -> [(Int, [a])]
 mfp stms transitions extremalLabels extremalValue transferFunctions bottom setType ion s = let a = mfpInit s extremalLabels extremalValue bottom
                                                                                                w = transitions
                                                                                            in mfpIteration a w transferFunctions s setType ion
 
-mfpInit :: Stat' -> [Int] -> [a] -> [a] ->  [(Int, [a])]                                                                                         
+mfpInit :: Stat' -> [Int] -> [a] -> [a] ->  [(Int, [a])]
 mfpInit statements extremalLabels extremalValue bottom = setA statements
   where setA stmt = if (getLabel stmt) `elem` extremalLabels
                     then map (\x -> (x, extremalValue)) extremalLabels
                     else map (\x -> (x, [])) ((getLabels stmt) L.\\ extremalLabels)
 
-mfpIteration :: Eq a => [(Int , [a])] -> [(Int,Int)] -> ([a] -> Int -> Stat' -> [a]) -> Stat' -> Bool -> Bool -> [(Int , [a])]          
+mfpIteration :: Eq a => [(Int , [a])] -> [(Int,Int)] -> ([a] -> Int -> Stat' -> [a]) -> Stat' -> Bool -> Bool -> [(Int , [a])]
 mfpIteration a [] t s set ion  = a
 mfpIteration a w@((l1, l2) : ws) transferFunctions stms setType ion =
   let a1 = concatMap (\(x1,x2) -> if x1 == l1 then x2 else []) a
@@ -362,8 +382,8 @@ freeVarsB (Not x)            = freeVarsB x
 -- BASIC LIVE VARIABLES IMPLEMENTATION
 -- tranfer functions live variable
 transferFunctionExit :: Program' -> Int -> [String]
-transferFunctionExit p@(Program' _ s) i | i `elem` (final s) = []
-                                        | otherwise = concatMap (\(ll1, ll2) -> transferFunctionEntry p ll1) (filter (\(l1, l2) -> l2 == i) (reversedFlow s))
+transferFunctionExit p@(Program' procs s) i | i `elem` (final s) = []
+  | otherwise = concatMap (\(ll1, ll2) -> transferFunctionEntry p ll1) (filter (\(l1, l2) -> l2 == i) (reversedFlow s procs))
 
 transferFunctionEntry :: Program' -> Int -> [String]
 transferFunctionEntry p@(Program' _ s) i = ((transferFunctionExit p i) L.\\ kill block) ++ gen block
