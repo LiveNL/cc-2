@@ -1,8 +1,8 @@
 
 
--- UUAGC 0.9.42.3 (AttributeGrammar)
+-- UUAGC 0.9.52.2 (AttributeGrammar)
 module AttributeGrammar where
-{-# LINE 1 "./AttributeGrammar.ag" #-}
+{-# LINE 1 "AttributeGrammar.ag" #-}
 
 import qualified Data.Map as M
 import qualified Data.Maybe as Maybe
@@ -346,17 +346,17 @@ sem_Proc_Proc name_ inp_ out_ stat_ =
               _statIlabel :: Int
               _statIstat :: Stat'
               _lhsOproc =
-                  ({-# LINE 120 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 118 "AttributeGrammar.ag" #-}
                    Proc' _lhsIlabel (_lhsIlabel + 1) name_ inp_ out_ _statIstat
                    {-# LINE 352 "AttributeGrammar.hs" #-}
                    )
               _statOlabel =
-                  ({-# LINE 121 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 119 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 2
                    {-# LINE 357 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 122 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 120 "AttributeGrammar.ag" #-}
                    _statIlabel
                    {-# LINE 362 "AttributeGrammar.hs" #-}
                    )
@@ -427,22 +427,22 @@ sem_Procs_Cons hd_ tl_ =
               _tlIlabel :: Int
               _tlIprocs :: Procs'
               _lhsOprocs =
-                  ({-# LINE 116 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 114 "AttributeGrammar.ag" #-}
                    _hdIproc : _tlIprocs
                    {-# LINE 433 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 109 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 107 "AttributeGrammar.ag" #-}
                    _tlIlabel
                    {-# LINE 438 "AttributeGrammar.hs" #-}
                    )
               _hdOlabel =
-                  ({-# LINE 105 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 103 "AttributeGrammar.ag" #-}
                    _lhsIlabel
                    {-# LINE 443 "AttributeGrammar.hs" #-}
                    )
               _tlOlabel =
-                  ({-# LINE 109 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 107 "AttributeGrammar.ag" #-}
                    _hdIlabel
                    {-# LINE 448 "AttributeGrammar.hs" #-}
                    )
@@ -457,12 +457,12 @@ sem_Procs_Nil =
          (let _lhsOprocs :: Procs'
               _lhsOlabel :: Int
               _lhsOprocs =
-                  ({-# LINE 117 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 115 "AttributeGrammar.ag" #-}
                    []
                    {-# LINE 463 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 109 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 107 "AttributeGrammar.ag" #-}
                    _lhsIlabel
                    {-# LINE 468 "AttributeGrammar.hs" #-}
                    )
@@ -527,22 +527,22 @@ sem_Program_Program procs_ stat_ =
               _statIlabel :: Int
               _statIstat :: Stat'
               _lhsOprogram =
-                  ({-# LINE 113 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 111 "AttributeGrammar.ag" #-}
                    Program' _procsIprocs _statIstat
                    {-# LINE 533 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 97 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 95 "AttributeGrammar.ag" #-}
                    _statIlabel
                    {-# LINE 538 "AttributeGrammar.hs" #-}
                    )
               _procsOlabel =
-                  ({-# LINE 109 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 107 "AttributeGrammar.ag" #-}
                    _lhsIlabel
                    {-# LINE 543 "AttributeGrammar.hs" #-}
                    )
               _statOlabel =
-                  ({-# LINE 101 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 99 "AttributeGrammar.ag" #-}
                    _procsIlabel
                    {-# LINE 548 "AttributeGrammar.hs" #-}
                    )
@@ -580,17 +580,17 @@ sem_Program'_Program' procs_ stat_ =
          _statIflowAG :: ([(Int,Int)])
          _statIinitStatAG :: Int
          _lhsOinitStatAG =
-             ({-# LINE 164 "./AttributeGrammar.ag" #-}
+             ({-# LINE 171 "AttributeGrammar.ag" #-}
               _statIinitStatAG
               {-# LINE 586 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 165 "./AttributeGrammar.ag" #-}
+             ({-# LINE 172 "AttributeGrammar.ag" #-}
               _statIfinalAG
               {-# LINE 591 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 166 "./AttributeGrammar.ag" #-}
+             ({-# LINE 173 "AttributeGrammar.ag" #-}
               _statIflowAG
               {-# LINE 596 "AttributeGrammar.hs" #-}
               )
@@ -655,12 +655,12 @@ sem_Stat_Skip =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 126 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 123 "AttributeGrammar.ag" #-}
                    Skip' _lhsIlabel
                    {-# LINE 661 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 127 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 124 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 666 "AttributeGrammar.hs" #-}
                    )
@@ -680,22 +680,22 @@ sem_Stat_IfThenElse cond_ stat1_ stat2_ =
               _stat2Ilabel :: Int
               _stat2Istat :: Stat'
               _lhsOstat =
-                  ({-# LINE 128 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 126 "AttributeGrammar.ag" #-}
                    IfThenElse' _lhsIlabel cond_ _stat1Istat _stat2Istat
                    {-# LINE 686 "AttributeGrammar.hs" #-}
                    )
               _stat1Olabel =
-                  ({-# LINE 129 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 127 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 691 "AttributeGrammar.hs" #-}
                    )
               _stat2Olabel =
-                  ({-# LINE 130 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 128 "AttributeGrammar.ag" #-}
                    _stat1Ilabel
                    {-# LINE 696 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 131 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 129 "AttributeGrammar.ag" #-}
                    _stat2Ilabel
                    {-# LINE 701 "AttributeGrammar.hs" #-}
                    )
@@ -715,17 +715,17 @@ sem_Stat_While cond_ stat_ =
               _statIlabel :: Int
               _statIstat :: Stat'
               _lhsOstat =
-                  ({-# LINE 132 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 131 "AttributeGrammar.ag" #-}
                    While' _lhsIlabel cond_ _statIstat
                    {-# LINE 721 "AttributeGrammar.hs" #-}
                    )
               _statOlabel =
-                  ({-# LINE 133 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 132 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 726 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 134 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 133 "AttributeGrammar.ag" #-}
                    _statIlabel
                    {-# LINE 731 "AttributeGrammar.hs" #-}
                    )
@@ -741,12 +741,12 @@ sem_Stat_Call name_ params_ out_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 135 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 135 "AttributeGrammar.ag" #-}
                    Call' _lhsIlabel (_lhsIlabel + 1) name_ params_ out_
                    {-# LINE 747 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 136 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 136 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 2
                    {-# LINE 752 "AttributeGrammar.hs" #-}
                    )
@@ -759,12 +759,12 @@ sem_Stat_IAssign name_ val_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 137 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 138 "AttributeGrammar.ag" #-}
                    IAssign' _lhsIlabel name_ val_
                    {-# LINE 765 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 138 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 139 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 770 "AttributeGrammar.hs" #-}
                    )
@@ -777,12 +777,12 @@ sem_Stat_BAssign name_ val_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 139 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 141 "AttributeGrammar.ag" #-}
                    BAssign' _lhsIlabel name_ val_
                    {-# LINE 783 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 140 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 142 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 788 "AttributeGrammar.hs" #-}
                    )
@@ -801,22 +801,22 @@ sem_Stat_Seq stat1_ stat2_ =
               _stat2Ilabel :: Int
               _stat2Istat :: Stat'
               _lhsOstat =
-                  ({-# LINE 141 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 144 "AttributeGrammar.ag" #-}
                    Seq' _stat1Istat _stat2Istat
                    {-# LINE 807 "AttributeGrammar.hs" #-}
                    )
               _stat1Olabel =
-                  ({-# LINE 142 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 145 "AttributeGrammar.ag" #-}
                    _lhsIlabel
                    {-# LINE 812 "AttributeGrammar.hs" #-}
                    )
               _stat2Olabel =
-                  ({-# LINE 143 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 146 "AttributeGrammar.ag" #-}
                    _stat1Ilabel
                    {-# LINE 817 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 144 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 147 "AttributeGrammar.ag" #-}
                    _stat2Ilabel
                    {-# LINE 822 "AttributeGrammar.hs" #-}
                    )
@@ -833,12 +833,12 @@ sem_Stat_Malloc name_ size_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 145 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 149 "AttributeGrammar.ag" #-}
                    Malloc' _lhsIlabel name_ size_
                    {-# LINE 839 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 146 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 150 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 844 "AttributeGrammar.hs" #-}
                    )
@@ -850,12 +850,12 @@ sem_Stat_Free ptr_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 147 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 152 "AttributeGrammar.ag" #-}
                    Free' _lhsIlabel ptr_
                    {-# LINE 856 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 148 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 153 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 861 "AttributeGrammar.hs" #-}
                    )
@@ -868,12 +868,12 @@ sem_Stat_RefAssign ptr_ val_ =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 149 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 155 "AttributeGrammar.ag" #-}
                    RefAssign' _lhsIlabel ptr_ val_
                    {-# LINE 874 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 150 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 156 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 879 "AttributeGrammar.hs" #-}
                    )
@@ -884,12 +884,12 @@ sem_Stat_Continue =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 151 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 158 "AttributeGrammar.ag" #-}
                    Continue' _lhsIlabel
                    {-# LINE 890 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 152 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 159 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 895 "AttributeGrammar.hs" #-}
                    )
@@ -900,12 +900,12 @@ sem_Stat_Break =
          (let _lhsOstat :: Stat'
               _lhsOlabel :: Int
               _lhsOstat =
-                  ({-# LINE 153 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 161 "AttributeGrammar.ag" #-}
                    Break' _lhsIlabel
                    {-# LINE 906 "AttributeGrammar.hs" #-}
                    )
               _lhsOlabel =
-                  ({-# LINE 154 "./AttributeGrammar.ag" #-}
+                  ({-# LINE 162 "AttributeGrammar.ag" #-}
                    _lhsIlabel + 1
                    {-# LINE 911 "AttributeGrammar.hs" #-}
                    )
@@ -968,17 +968,17 @@ sem_Stat'_Skip' label_ =
          _lhsOfinalAG :: ([Int])
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG =
-             ({-# LINE 169 "./AttributeGrammar.ag" #-}
+             ({-# LINE 176 "AttributeGrammar.ag" #-}
               label_
               {-# LINE 974 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 170 "./AttributeGrammar.ag" #-}
+             ({-# LINE 177 "AttributeGrammar.ag" #-}
               [label_]
               {-# LINE 979 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 171 "./AttributeGrammar.ag" #-}
+             ({-# LINE 178 "AttributeGrammar.ag" #-}
               []
               {-# LINE 984 "AttributeGrammar.hs" #-}
               )
@@ -999,17 +999,17 @@ sem_Stat'_IfThenElse' labelc_ cond_ stat1_ stat2_ =
          _stat2IflowAG :: ([(Int,Int)])
          _stat2IinitStatAG :: Int
          _lhsOinitStatAG =
-             ({-# LINE 173 "./AttributeGrammar.ag" #-}
+             ({-# LINE 180 "AttributeGrammar.ag" #-}
               labelc_
               {-# LINE 1005 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 174 "./AttributeGrammar.ag" #-}
+             ({-# LINE 181 "AttributeGrammar.ag" #-}
               [labelc_] ++ _stat1IfinalAG ++ _stat2IfinalAG
               {-# LINE 1010 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 175 "./AttributeGrammar.ag" #-}
+             ({-# LINE 182 "AttributeGrammar.ag" #-}
               _stat1IflowAG ++ _stat2IflowAG ++ [(labelc_, _stat1IinitStatAG),(labelc_, _stat2IinitStatAG)]
               {-# LINE 1015 "AttributeGrammar.hs" #-}
               )
@@ -1030,17 +1030,17 @@ sem_Stat'_While' labelc_ cond_ stat_ =
          _statIflowAG :: ([(Int,Int)])
          _statIinitStatAG :: Int
          _lhsOinitStatAG =
-             ({-# LINE 177 "./AttributeGrammar.ag" #-}
+             ({-# LINE 184 "AttributeGrammar.ag" #-}
               labelc_
               {-# LINE 1036 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 178 "./AttributeGrammar.ag" #-}
+             ({-# LINE 185 "AttributeGrammar.ag" #-}
               [labelc_]
               {-# LINE 1041 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 179 "./AttributeGrammar.ag" #-}
+             ({-# LINE 186 "AttributeGrammar.ag" #-}
               _statIflowAG ++ [(labelc_ , _statIinitStatAG)] ++ map (\x -> (x,labelc_)) _statIfinalAG
               {-# LINE 1046 "AttributeGrammar.hs" #-}
               )
@@ -1054,22 +1054,22 @@ sem_Stat'_Call' :: Int ->
                    String ->
                    (T_Stat')
 sem_Stat'_Call' labelCall_ labelExit_ name_ params_ out_ =
-    (let _lhsOfinalAG :: ([Int])
+    (let _lhsOinitStatAG :: Int
+         _lhsOfinalAG :: ([Int])
          _lhsOflowAG :: ([(Int,Int)])
-         _lhsOinitStatAG :: Int
-         _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
-              error "missing rule: Stat'.Call'.lhs.finalAG"
+         _lhsOinitStatAG =
+             ({-# LINE 199 "AttributeGrammar.ag" #-}
+              labelCall_
               {-# LINE 1064 "AttributeGrammar.hs" #-}
               )
-         _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
-              error "missing rule: Stat'.Call'.lhs.flowAG"
+         _lhsOfinalAG =
+             ({-# LINE 200 "AttributeGrammar.ag" #-}
+              [labelExit_]
               {-# LINE 1069 "AttributeGrammar.hs" #-}
               )
-         _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
-              error "missing rule: Stat'.Call'.lhs.initStatAG"
+         _lhsOflowAG =
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
+              error "missing rule: Stat'.Call'.lhs.flowAG"
               {-# LINE 1074 "AttributeGrammar.hs" #-}
               )
      in  ( _lhsOfinalAG,_lhsOflowAG,_lhsOinitStatAG))
@@ -1082,17 +1082,17 @@ sem_Stat'_IAssign' label_ name_ val_ =
          _lhsOfinalAG :: ([Int])
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG =
-             ({-# LINE 181 "./AttributeGrammar.ag" #-}
+             ({-# LINE 188 "AttributeGrammar.ag" #-}
               label_
               {-# LINE 1088 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 182 "./AttributeGrammar.ag" #-}
+             ({-# LINE 189 "AttributeGrammar.ag" #-}
               [label_]
               {-# LINE 1093 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 183 "./AttributeGrammar.ag" #-}
+             ({-# LINE 190 "AttributeGrammar.ag" #-}
               []
               {-# LINE 1098 "AttributeGrammar.hs" #-}
               )
@@ -1106,17 +1106,17 @@ sem_Stat'_BAssign' label_ name_ val_ =
          _lhsOfinalAG :: ([Int])
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG =
-             ({-# LINE 185 "./AttributeGrammar.ag" #-}
+             ({-# LINE 192 "AttributeGrammar.ag" #-}
               label_
               {-# LINE 1112 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 186 "./AttributeGrammar.ag" #-}
+             ({-# LINE 193 "AttributeGrammar.ag" #-}
               [label_]
               {-# LINE 1117 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 187 "./AttributeGrammar.ag" #-}
+             ({-# LINE 194 "AttributeGrammar.ag" #-}
               []
               {-# LINE 1122 "AttributeGrammar.hs" #-}
               )
@@ -1135,17 +1135,17 @@ sem_Stat'_Seq' stat1_ stat2_ =
          _stat2IflowAG :: ([(Int,Int)])
          _stat2IinitStatAG :: Int
          _lhsOinitStatAG =
-             ({-# LINE 189 "./AttributeGrammar.ag" #-}
+             ({-# LINE 196 "AttributeGrammar.ag" #-}
               _stat1IinitStatAG
               {-# LINE 1141 "AttributeGrammar.hs" #-}
               )
          _lhsOfinalAG =
-             ({-# LINE 190 "./AttributeGrammar.ag" #-}
+             ({-# LINE 197 "AttributeGrammar.ag" #-}
               _stat2IfinalAG
               {-# LINE 1146 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 191 "./AttributeGrammar.ag" #-}
+             ({-# LINE 198 "AttributeGrammar.ag" #-}
               _stat1IflowAG ++ _stat2IflowAG ++ map (\x -> (x,_stat2IinitStatAG)) _stat1IfinalAG
               {-# LINE 1151 "AttributeGrammar.hs" #-}
               )
@@ -1163,17 +1163,17 @@ sem_Stat'_Malloc' label_ name_ size_ =
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG :: Int
          _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
+             ({-# LINE 166 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Malloc'.lhs.finalAG"
               {-# LINE 1169 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Malloc'.lhs.flowAG"
               {-# LINE 1174 "AttributeGrammar.hs" #-}
               )
          _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
+             ({-# LINE 165 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Malloc'.lhs.initStatAG"
               {-# LINE 1179 "AttributeGrammar.hs" #-}
               )
@@ -1186,17 +1186,17 @@ sem_Stat'_Free' label_ ptr_ =
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG :: Int
          _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
+             ({-# LINE 166 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Free'.lhs.finalAG"
               {-# LINE 1192 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Free'.lhs.flowAG"
               {-# LINE 1197 "AttributeGrammar.hs" #-}
               )
          _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
+             ({-# LINE 165 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Free'.lhs.initStatAG"
               {-# LINE 1202 "AttributeGrammar.hs" #-}
               )
@@ -1210,17 +1210,17 @@ sem_Stat'_RefAssign' label_ ptr_ val_ =
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG :: Int
          _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
+             ({-# LINE 166 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.RefAssign'.lhs.finalAG"
               {-# LINE 1216 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.RefAssign'.lhs.flowAG"
               {-# LINE 1221 "AttributeGrammar.hs" #-}
               )
          _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
+             ({-# LINE 165 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.RefAssign'.lhs.initStatAG"
               {-# LINE 1226 "AttributeGrammar.hs" #-}
               )
@@ -1232,17 +1232,17 @@ sem_Stat'_Continue' label_ =
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG :: Int
          _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
+             ({-# LINE 166 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Continue'.lhs.finalAG"
               {-# LINE 1238 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Continue'.lhs.flowAG"
               {-# LINE 1243 "AttributeGrammar.hs" #-}
               )
          _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
+             ({-# LINE 165 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Continue'.lhs.initStatAG"
               {-# LINE 1248 "AttributeGrammar.hs" #-}
               )
@@ -1254,17 +1254,17 @@ sem_Stat'_Break' label_ =
          _lhsOflowAG :: ([(Int,Int)])
          _lhsOinitStatAG :: Int
          _lhsOfinalAG =
-             ({-# LINE 158 "./AttributeGrammar.ag" #-}
+             ({-# LINE 166 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Break'.lhs.finalAG"
               {-# LINE 1260 "AttributeGrammar.hs" #-}
               )
          _lhsOflowAG =
-             ({-# LINE 159 "./AttributeGrammar.ag" #-}
+             ({-# LINE 167 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Break'.lhs.flowAG"
               {-# LINE 1265 "AttributeGrammar.hs" #-}
               )
          _lhsOinitStatAG =
-             ({-# LINE 157 "./AttributeGrammar.ag" #-}
+             ({-# LINE 165 "AttributeGrammar.ag" #-}
               error "missing rule: Stat'.Break'.lhs.initStatAG"
               {-# LINE 1270 "AttributeGrammar.hs" #-}
               )

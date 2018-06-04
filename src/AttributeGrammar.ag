@@ -52,7 +52,7 @@ data Stat'
   | Break'         label :: Int
 deriving Stat' : Show
 
-data IExpr 
+data IExpr
   | IConst        val  :: Int
   | Var           name :: String
   | Plus          left :: IExpr       right :: IExpr
@@ -87,11 +87,9 @@ data Code | CBExpr   BExpr
           | CProc    Proc'
           | CProgram Program'
 
-
 type Procs = [Proc]
 type Procs' = [Proc']
 type Exprs = [Expr]
-
 
 attr Program
   chn label       :: Int
@@ -121,35 +119,45 @@ sem Proc
                   stat.label  = @lhs.label + 2
                   lhs.label   = @stat.label
 
-
 sem Stat
   | Skip          lhs.stat    = Skip' @lhs.label
                   lhs.label   = @lhs.label + 1
+
   | IfThenElse    lhs.stat    = IfThenElse' @lhs.label @cond @stat1.stat @stat2.stat
                   stat1.label = @lhs.label + 1
                   stat2.label = @stat1.label
                   lhs.label   = @stat2.label
+
   | While         lhs.stat    = While' @lhs.label @cond @stat.stat
                   stat.label  = @lhs.label + 1
                   lhs.label   = @stat.label
+
   | Call          lhs.stat    = Call' @lhs.label (@lhs.label + 1) @name @params @out
                   lhs.label   = @lhs.label + 2
+
   | IAssign       lhs.stat    = IAssign' @lhs.label @name @val
                   lhs.label   = @lhs.label + 1
+
   | BAssign       lhs.stat    = BAssign' @lhs.label @name @val
                   lhs.label   = @lhs.label + 1
+
   | Seq           lhs.stat    = Seq' @stat1.stat @stat2.stat
                   stat1.label = @lhs.label
                   stat2.label = @stat1.label
                   lhs.label   = @stat2.label
+
   | Malloc        lhs.stat    = Malloc' @lhs.label @name @size
                   lhs.label   = @lhs.label + 1
+
   | Free          lhs.stat    = Free' @lhs.label @ptr
                   lhs.label   = @lhs.label + 1
+
   | RefAssign     lhs.stat    = RefAssign' @lhs.label @ptr @val
                   lhs.label   = @lhs.label + 1
+
   | Continue      lhs.stat    = Continue' @lhs.label
                   lhs.label   = @lhs.label + 1
+
   | Break         lhs.stat    = Break' @lhs.label
                   lhs.label   = @lhs.label + 1
 
@@ -160,13 +168,12 @@ attr Program' Stat'
 
 
 sem Program'
-   | Program'     --lhs.flow = @stat.edges
-                  lhs.initStatAG = @stat.initStatAG
+   | Program'     lhs.initStatAG = @stat.initStatAG
                   lhs.finalAG    = @stat.finalAG
                   lhs.flowAG     = @stat.flowAG
 
-sem Stat' 
-   | Skip'        lhs.initStatAG = @label 
+sem Stat'
+   | Skip'        lhs.initStatAG = @label
                   lhs.finalAG    = [@label]
                   lhs.flowAG     = []
 
@@ -174,7 +181,7 @@ sem Stat'
                   lhs.finalAG    = [@labelc] ++ @stat1.finalAG ++ @stat2.finalAG
                   lhs.flowAG     = @stat1.flowAG ++ @stat2.flowAG ++ [(@labelc, @stat1.initStatAG),(@labelc, @stat2.initStatAG)]
 
-   | While'       lhs.initStatAG = @labelc 
+   | While'       lhs.initStatAG = @labelc
                   lhs.finalAG    = [@labelc]
                   lhs.flowAG     = @stat.flowAG ++ [(@labelc , @stat.initStatAG)] ++ map (\x -> (x,@labelc)) @stat.finalAG
 
@@ -182,15 +189,12 @@ sem Stat'
                   lhs.finalAG    = [@label]
                   lhs.flowAG     = []
 
-   | BAssign'     lhs.initStatAG = @label 
+   | BAssign'     lhs.initStatAG = @label
                   lhs.finalAG    = [@label]
                   lhs.flowAG     = []
 
-   | Seq'         lhs.initStatAG = @stat1.initStatAG 
-                  lhs.finalAG    = @stat2.finalAG 
+   | Seq'         lhs.initStatAG = @stat1.initStatAG
+                  lhs.finalAG    = @stat2.finalAG
                   lhs.flowAG     = @stat1.flowAG ++ @stat2.flowAG ++ map (\x -> (x,@stat2.initStatAG)) @stat1.finalAG
-
-
-
-
- 
+   | Call'        lhs.initStatAG = @labelCall
+                  lhs.finalAG    = [@labelExit]
