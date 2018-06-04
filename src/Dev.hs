@@ -17,12 +17,23 @@ runAnalysis' programName = do
   let fileName = "../examples/"++programName++".c"
   content <- readFile fileName
   let (label, p) = sem_Program (happy . alex $ content) 1
-  putStrLn "OUTPUT:"
+  putStrLn "\nLabel statement summary:"
+  -- putStrLn (show (map (\x -> ("\n" ++ show x)) (programToStat p)))
+  mapM_ (putStrLn) (map (\s -> labelF s) (programToStat p))
+  putStrLn "\nFlow:"
+  putStrLn (show (getAgFlow p))
   putStrLn "\nSLV:"
   putStrLn (show (slv p))
   putStrLn "\nCP:"
   putStrLn (show (cp p))
   putStrLn "\nG'bye"
+
+labelF (Skip' i)             = show i ++ " - Skip"
+labelF (IAssign' i n v)      = show i ++ " - " ++ "IAssign: " ++ show n ++ " := " ++ show v
+labelF (BAssign' i n v)      = show i ++ " - " ++ "BAssign: " ++ show n ++ " := " ++ show v
+labelF (IfThenElse' i c _ _) = show i ++ " - IfThenElse" ++ " => " ++ show c
+labelF (While' i c s)        = show i ++ " - While"
+labelF (Seq' s1 s2)          = "Sequence"
 
 ----------------------------
 -- BASE FUNCTIONS
@@ -143,22 +154,22 @@ cp (Program' p s) =
   let transitions    = flow s p
       extremalLabels = [getAgInitWithStat s]
       extremalValue  = map (\x -> (x, Top)) (getVarStatements s p)
-      in mfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s
+   in mfp (statToStatList s) transitions extremalLabels extremalValue cpTransferFunction [] True True s
 
 cpTransferFunction :: [(String, Result)] -> Int -> Stat' -> [(String, Result)]
-cpTransferFunction a1 label stmt =  cpTransferFunction' a1 stmt
+cpTransferFunction a1 label stmt = cpTransferFunction' a1 stmt
 
 cpTransferFunction' :: [(String, Result)] -> Stat' -> [(String, Result)]
-cpTransferFunction' s (Skip' _)          = []
-cpTransferFunction' s (IAssign' _ x a)  | null s =  []
-                                        | otherwise = (removeItem x s) ++ [(x, (acp a s))]
-cpTransferFunction' s (BAssign' _ _ _)   = s
+cpTransferFunction' s (Skip' _)               = []
+cpTransferFunction' s (IAssign' _ x a)        | null s =  []
+                                              | otherwise = (removeItem x s) ++ [(x, (acp a s))]
+cpTransferFunction' s (BAssign' _ _ _)        = s
 cpTransferFunction' s (IfThenElse' i _ s1 s2) = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
 cpTransferFunction' s (While' i _ s1)         = cpTransferFunction' s s1
 cpTransferFunction' s (Seq' s1 s2)            = cpTransferFunction' s s1 ++ cpTransferFunction' s s2
-cpTransferFunction' s (Call' _ _ _ _ _)        = []
+cpTransferFunction' s (Call' _ _ _ _ _)       = s
 
-removeItem _ []              = []
+removeItem _ []             = []
 removeItem x (y@(x1,x2):ys) | x == x1   = removeItem x ys
                             | otherwise = y : removeItem x ys
 
@@ -219,12 +230,9 @@ freeVarsB (Or x y)           = L.nub ((freeVarsB x) ++ (freeVarsB y))
 freeVarsB (Not x)            = freeVarsB x
 
 slv (Program' p s) =
-  let transitions   = reversedFlow s p
+  let transitions    = reversedFlow s p
       extremalLabels = final s
-      extremalValue = []
-      bottomList    = map (\x -> (x, [])) ((getLabels s) L.\\ extremalLabels)
-      extremalList  = map (\x -> (x, [])) extremalLabels
-      a             = bottomList ++ extremalList
+      extremalValue  = []
    in mfp (statToStatList s) transitions extremalLabels extremalValue slvTransferFunction [] True True s
 
 slvTransferFunction :: [String] -> Int -> Stat' -> [String]
